@@ -1,1 +1,0 @@
-from pm4py.objects.iot.importer.xes.variants import xmlxes20
