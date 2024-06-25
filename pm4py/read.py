@@ -16,6 +16,7 @@
 '''
 from typing import Tuple, Dict, Optional
 
+from pm4py.objects.iot.obj import IOTEventLog
 from pm4py.objects.bpmn.obj import BPMN
 from pm4py.objects.log.obj import EventLog
 from pm4py.objects.ocel.obj import OCEL
@@ -36,6 +37,16 @@ INDEX_COLUMN = "@@index"
 __doc__ = """
 The ``pm4py.read`` module contains all funcationality related to reading files/objects from disk.
 """
+
+def read_iot_xes(file_path: str, encoding: str = constants.DEFAULT_ENCODING, **kwargs) -> IOTEventLog:
+    if not os.path.exists(file_path):
+        raise Exception("File does not exist")
+    from pm4py.objects.iot.importer.xes import importer as iot_xes_importer
+    from copy import copy
+    parameters = copy(kwargs)
+    parameters["encoding"] = encoding
+    log = iot_xes_importer.apply(file_path, parameters=parameters)
+    return log
 
 
 def read_xes(file_path: str, variant: Optional[str] = None, return_legacy_log_object: bool = constants.DEFAULT_READ_XES_LEGACY_OBJECT, encoding: str = constants.DEFAULT_ENCODING, **kwargs) -> Union[DataFrame, EventLog]:

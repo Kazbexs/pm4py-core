@@ -3,7 +3,6 @@ import networkx as nx
 import time
 import requests
 import importlib.util
-from copy import deepcopy
 
 
 REMOVE_DEPS_AT_END = True
@@ -36,8 +35,9 @@ def get_version(package):
     return package, url, version, license
 
 
-def elaborate_single_python_package(package_name, deps, include_self=False):
-    os.system("pipdeptree -p "+package_name+" >deps.txt")
+def elaborate_single_python_package(package_name, deps):
+    if not os.path.exists("deps.txt"):
+        os.system("pipdeptree -p "+package_name+" >deps.txt")
 
     F = open("deps.txt", "r")
     content = F.readlines()
@@ -84,18 +84,15 @@ def elaborate_single_python_package(package_name, deps, include_self=False):
 
     if "cvxopt" in deps:
         del deps[deps.index("cvxopt")]
-
-    if include_self:
-        if package_name not in deps:
-            deps.append(package_name)
-
+    if "pm4py" in deps:
+        del deps[deps.index("pm4py")]
     deps = sorted(deps, key=lambda x: x.lower())
 
     return deps
 
 
-def get_all_third_party_dependencies(package_name, deps, packages_dictio, include_self=False):
-    deps = elaborate_single_python_package(package_name, deps, include_self=include_self)
+def get_all_third_party_dependencies(package_name, deps, packages_dictio):
+    deps = elaborate_single_python_package(package_name, deps)
     packages = []
     for x in deps:
         if x not in packages_dictio:
@@ -106,7 +103,7 @@ def get_all_third_party_dependencies(package_name, deps, packages_dictio, includ
 
 deps = []
 packages_dictio = {}
-deps, packages = get_all_third_party_dependencies("pm4py", deps, packages_dictio, include_self=False)
+deps, packages = get_all_third_party_dependencies("pm4py", deps, packages_dictio)
 
 if UPDATE_OTHER_FILES:
     F = open("../requirements_complete.txt", "w")
@@ -137,12 +134,8 @@ if UPDATE_OTHER_FILES:
         F.write("| %s | %s | %s | %s |\n" % (x[0].strip(), x[1].strip(), x[3].strip(), x[2].strip()))
     F.close()
 
-prev_deps = deepcopy(packages)
-
-extra_packages = ["requests", "pyvis", "jsonschema", "workalendar", "scikit-learn", "openai"]
-for ep in extra_packages:
-    if importlib.util.find_spec(ep):
-        deps, packages = get_all_third_party_dependencies(ep, deps, packages_dictio, include_self=True)
+if importlib.util.find_spec("sklearn"):
+    deps, packages = get_all_third_party_dependencies("scikit-learn", deps, packages_dictio)
 
 first_line_packages = ["deprecation", "packaging", "networkx", "graphviz", "six", "python-dateutil", "pytz", "tzdata", "intervaltree", "sortedcontainers", "wheel", "setuptools"]
 second_line_packages = ["pydotplus", "pyparsing", "tqdm", "colorama", "cycler", "joblib", "threadpoolctl"]
@@ -152,8 +145,6 @@ first_packages_line = ""
 second_packages_line = ""
 third_packages_line = ""
 fourth_package_line = ""
-fifth_package_line = ""
-sixth_package_line = ""
 
 for x in packages:
     cont = x[0] + "==" + x[2] + " "
@@ -163,12 +154,8 @@ for x in packages:
         second_packages_line += cont
     elif x[0] in third_line_packages:
         third_packages_line += cont
-    elif x in prev_deps:
-        fourth_package_line += cont
-    elif x[0] in extra_packages:
-        sixth_package_line += cont
     else:
-        fifth_package_line += cont
+        fourth_package_line += cont
 
 F = open("../Dockerfile", "r")
 dockerfile_contents = F.readlines()
@@ -188,7 +175,7 @@ while i < len(dockerfile_contents):
         before_lines.append(dockerfile_contents[i])
     i = i + 1
 
-stru = "".join(before_lines + ["RUN pip3 install " + x + "\n" for x in [first_packages_line, second_packages_line, third_packages_line, fourth_package_line, fifth_package_line, sixth_package_line]] + after_lines)
+stru = "".join(before_lines + ["RUN pip3 install " + x + "\n" for x in [first_packages_line, second_packages_line, third_packages_line, fourth_package_line]] + after_lines)
 stru = stru.strip() + "\n"
 
 if UPDATE_DOCKERFILE:

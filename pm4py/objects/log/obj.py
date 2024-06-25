@@ -33,6 +33,10 @@ class XESExtension(Enum):
     SoftwareEvent = ('Software Event', 'swevent', 'http://www.xes-standard.org/swevent.xesext')
     SoftwareTelemetry = ('Software Telemetry', 'swtelemetry', 'http://www.xes-standard.org/swtelemetry.xesext')
     Time = ('Time', 'time', 'http://www.xes-standard.org/time.xesext')
+    #added with iot xes
+    ID = ('ID', 'id', 'http://www.xes-standard.org/identity.xesext')
+    CPEE = ('CPEE', 'cpee', 'http://cpee.org/cpee.xesext')
+    Stream = ('stream', 'stream', 'https://cpee.org/datastream/datastream.xesext')
 
     def __init__(self, name, prefix, uri):
         self._name = name

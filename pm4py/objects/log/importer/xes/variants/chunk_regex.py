@@ -254,7 +254,4 @@ def import_from_string(log_string, parameters=None):
     else:
         s = b
 
-    log = import_log_from_file_object(s, encoding, parameters=parameters)
-    s.close()
-    b.close()
-    return log
+    return import_log_from_file_object(s, encoding, parameters=parameters)
